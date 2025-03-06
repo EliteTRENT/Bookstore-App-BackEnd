@@ -135,4 +135,83 @@ RSpec.describe UserService, type: :service do
       end
     end
   end
+
+  describe ".login" do
+    let!(:user) do
+      User.create!(
+        name: "John Doe",
+        email: "john.doe@gmail.com",
+        password: "Password@123",
+        mobile_number: "9876543210"
+      )
+    end
+
+    context "with valid credentials" do
+      it "logs in successfully and returns a token" do
+        result = UserService.login(email: "john.doe@gmail.com", password: "Password@123")
+        expect(result[:success]).to be_truthy
+        expect(result[:message]).to eq("Login successful")
+        expect(result[:token]).not_to be_nil
+      end
+    end
+
+    context "with incorrect password" do
+      it "returns an error" do
+        result = UserService.login(email: "john.doe@gmail.com", password: "WrongPass123")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Wrong password")
+      end
+    end
+
+    context "with unregistered email" do
+      it "returns an error" do
+        result = UserService.login(email: "unknown@gmail.com", password: "Password@123")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Email is not registered")
+      end
+    end
+
+    context "with missing email" do
+      it "returns an error" do
+        result = UserService.login(email: "", password: "Password@123")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Email is not registered")
+      end
+    end
+
+    context "with missing password" do
+      it "returns an error" do
+        result = UserService.login(email: "john.doe@gmail.com", password: "")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Wrong password")
+      end
+    end
+
+    context "with invalid email format" do
+      it "returns an error" do
+        result = UserService.login(email: "john.doe#gmail.com", password: "Password@123")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Email is not registered")
+      end
+    end
+
+    context "with invalid password format" do
+      it "returns an error" do
+        result = UserService.login(email: "john.doe@gmail.com", password: "pass")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Wrong password")
+      end
+    end
+
+    context "with different email providers" do
+      let!(:user_yahoo) do
+        User.create!(name: "Jane Doe", email: "jane.doe@yahoo.com", password: "Password@123", mobile_number: "9876543211")
+      end
+
+      it "logs in successfully with Yahoo email" do
+        result = UserService.login(email: "jane.doe@yahoo.com", password: "Password@123")
+        expect(result[:success]).to be_truthy
+      end
+    end
+  end
 end
