@@ -1,0 +1,81 @@
+openapi: 3.0.1
+info:
+  title: User API
+  version: 1.0.0
+  description: API documentation for user authentication.
+
+paths:
+  /api/v1/users/signup:
+    post:
+      summary: User Signup
+      description: Creates a new user account.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "John Doe"
+                    email:
+                      type: string
+                      format: email
+                      example: user@example.com
+                    password:
+                      type: string
+                      format: password
+                      example: "Password@123"
+                    mobile_number:
+                      type: string
+                      example: "+919876543210"
+                  required:
+                    - name
+                    - email
+                    - password
+                    - mobile_number
+      responses:
+        "201":
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User created successfully"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 123
+                      name:
+                        type: string
+                        example: "John Doe"
+                      email:
+                        type: string
+                        format: email
+                        example: user@example.com
+                      mobile_number:
+                        type: string
+                        example: "+919876543210"
+        "422":
+          description: Validation error (unprocessable entity)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                      example: "Validation failed: One or more fields are missing or incorrect."
