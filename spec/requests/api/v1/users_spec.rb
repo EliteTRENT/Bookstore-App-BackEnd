@@ -214,4 +214,59 @@ RSpec.describe UserService, type: :service do
       end
     end
   end
+
+  describe ".forgetPassword" do
+    let!(:user) do
+      User.create!(
+        name: "John Doe",
+        email: "john.doe@gmail.com",
+        password: "Password@123",
+        mobile_number: "9876543210"
+      )
+    end
+
+    context "with a registered email" do
+      before do
+        allow(UserMailer).to receive(:enqueue_otp_email).and_return(true)
+      end
+
+      it "initiates password reset successfully" do
+        result = UserService.forgetPassword(email: "john.doe@gmail.com")
+        expect(result[:success]).to be_truthy
+        expect(result[:message]).to eq("OTP has been sent to john.doe@gmail.com, check your inbox")
+        expect(result[:otp]).to be_a(Integer)
+        expect(result[:otp]).to be_between(100000, 999999)
+        expect(result[:user_id]).to eq(user.id)
+        expect(UserMailer).to have_received(:enqueue_otp_email).with(user, result[:otp])
+      end
+    end
+
+    context "with an unregistered email" do
+      it "returns an error" do
+        result = UserService.forgetPassword(email: "unknown@gmail.com")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Email is not registered")
+      end
+    end
+
+    context "with an empty email" do
+      it "returns an error" do
+        result = UserService.forgetPassword(email: "")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Email is not registered")
+      end
+    end
+
+    context "when RabbitMQ enqueue fails" do
+      before do
+        allow(UserMailer).to receive(:enqueue_otp_email).and_raise(StandardError, "RabbitMQ connection failed")
+      end
+
+      it "returns an error" do
+        result = UserService.forgetPassword(email: "john.doe@gmail.com")
+        expect(result[:success]).to be_falsey
+        expect(result[:error]).to eq("Failed to send OTP, please try again")
+      end
+    end
+  end
 end

@@ -21,4 +21,25 @@ class UserService
       { success: false, error: "Email is not registered" }
     end
   end
+
+  def self.forgetPassword(forget_params)
+    user = User.find_by(email: forget_params[:email])
+    if user
+      @@otp = rand(100000..999999)
+      @@otp_generated_at = Time.current
+      begin
+        UserMailer.enqueue_otp_email(user, @@otp)
+        { success: true, message: "OTP has been sent to #{user.email}, check your inbox", otp: @@otp, otp_generated_at: @@otp_generated_at, user_id: user.id }
+      rescue StandardError => e
+        Rails.logger.error "Failed to enqueue OTP: #{e.message}"
+        { success: false, error: "Failed to send OTP, please try again" }
+      end
+    else
+        { success: false, error: "Email is not registered" }
+    end
+  end
+
+  private
+  @@otp = nil
+  @@otp_generated_at = nil
 end
