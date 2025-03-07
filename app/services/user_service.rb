@@ -39,6 +39,26 @@ class UserService
     end
   end
 
+  def self.resetPassword(user_id, reset_params)
+    user = User.find_by(id: user_id)
+    if !user
+      return { success: false, error: "User not found" }
+    end
+
+    if reset_params[:otp].to_i != @@otp || (Time.current - @@otp_generated_at > 2.minute)
+      return { success: false, error: "Invalid or expired OTP" }
+    end
+
+    if user.update(password: reset_params[:new_password])
+      @@otp = nil
+      @@otp_generated_at = nil
+      UserMailer.password_reset_success_email(user).deliver_later
+      { success: true, message: "Password successfully reset" }
+    else
+      { success: false, error: user.errors.full_messages }
+    end
+  end
+
   private
   @@otp = nil
   @@otp_generated_at = nil
